@@ -1,0 +1,205 @@
+/* public/css/styles.css */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+body, html {
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+    background: #f4f4f9;
+}
+
+/* Barra Superior de Filtros (Zonas) */
+.top-bar {
+    position: absolute;
+    top: 14px;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    display: flex;
+    gap: 8px;
+    padding: 0 14px;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+.top-bar::-webkit-scrollbar {
+    display: none;
+}
+
+.filter-chip {
+    background: #ffffff;
+    color: #1e293b;
+    border: none;
+    padding: 9px 16px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+}
+.filter-chip.active {
+    background: #16a34a;
+    color: #ffffff;
+}
+
+/* Contenedor del Mapa */
+#map {
+    height: 100vh;
+    width: 100vw;
+    z-index: 1;
+}
+
+/* Pines de Precio en el Mapa */
+.price-pin {
+    background: #16a34a;
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 0.8rem;
+    padding: 4px 10px;
+    border-radius: 14px;
+    border: 2px solid #ffffff;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
+    white-space: nowrap;
+    text-align: center;
+    transition: transform 0.2s ease, background 0.2s ease;
+}
+.price-pin.apartado {
+    background: #eab308;
+}
+.price-pin.active-pin {
+    background: #0f172a;
+    transform: scale(1.2);
+    z-index: 999 !important;
+}
+
+/* Carrusel Inferior de Tarjetas */
+.carousel-container {
+    position: absolute;
+    bottom: 22px;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    display: flex;
+    gap: 14px;
+    padding: 0 20px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+}
+.carousel-container::-webkit-scrollbar {
+    display: none;
+}
+
+.property-card {
+    flex: 0 0 85%;
+    max-width: 340px;
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 14px;
+    scroll-snap-align: center;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: border 0.2s ease, transform 0.2s ease;
+}
+.property-card.active {
+    border-color: #16a34a;
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+}
+
+.card-badge {
+    display: inline-block;
+    background: #dcfce7;
+    color: #15803d;
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+}
+.card-badge.apartado {
+    background: #fef9c3;
+    color: #a16207;
+}
+
+.card-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 4px;
+}
+.card-meta {
+    font-size: 0.85rem;
+    color: #64748b;
+    margin-bottom: 8px;
+}
+.card-price {
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: #16a34a;
+}
+
+/* Bottom Sheet (Panel de Detalles) */
+.bottom-sheet {
+    position: fixed;
+    bottom: -100%;
+    left: 0;
+    right: 0;
+    z-index: 2000;
+    background: #ffffff;
+    border-radius: 24px 24px 0 0;
+    padding: 20px;
+    box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.25);
+    transition: bottom 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    max-height: 82vh;
+    overflow-y: auto;
+}
+.bottom-sheet.open {
+    bottom: 0;
+}
+
+.sheet-handle {
+    width: 45px;
+    height: 5px;
+    background: #cbd5e1;
+    border-radius: 10px;
+    margin: 0 auto 14px auto;
+    cursor: pointer;
+}
+
+.trust-box {
+    background: #f8fafc;
+    border-left: 4px solid #16a34a;
+    padding: 12px;
+    border-radius: 8px;
+    margin: 14px 0;
+    font-size: 0.88rem;
+    line-height: 1.6;
+    color: #1e293b;
+}
+
+.btn-whatsapp {
+    display: block;
+    width: 100%;
+    background: #25D366;
+    color: #ffffff;
+    text-align: center;
+    padding: 14px;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 1rem;
+    text-decoration: none;
+    margin-top: 16px;
+    box-shadow: 0 4px 12px rgba(37, 211, 102, 0.3);
+}
