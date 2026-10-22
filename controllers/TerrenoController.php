@@ -31,6 +31,7 @@ class TerrenoController {
         require_once __DIR__ . '/../views/admin.php';
     }
 
+    // En controllers/TerrenoController.php dentro de guardar():
     public function guardar() {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $precio = floatval($_POST['precio']);
@@ -41,14 +42,16 @@ class TerrenoController {
                 $precio_corto = '$' . round($precio / 1000, 0) . 'k';
             }
 
+            $directorioImg = __DIR__ . '/../public/img/';
+            if (!is_dir($directorioImg)) {
+                mkdir($directorioImg, 0777, true);
+            }
+
+            // 1. Imagen Principal
             $nombreImagen = 'default.jpg';
             if (isset($_FILES['imagen']) && $_FILES['imagen']['error'] === UPLOAD_ERR_OK) {
-                $directorioImg = __DIR__ . '/../public/img/';
-                if (!is_dir($directorioImg)) {
-                    mkdir($directorioImg, 0777, true);
-                }
                 $ext = strtolower(pathinfo($_FILES['imagen']['name'], PATHINFO_EXTENSION));
-                $nombreAux = 'prop_' . time() . '.' . $ext;
+                $nombreAux = 'prop_' . time() . '_' . rand(100, 999) . '.' . $ext;
                 if (move_uploaded_file($_FILES['imagen']['tmp_name'], $directorioImg . $nombreAux)) {
                     $nombreImagen = $nombreAux;
                 }
@@ -71,7 +74,23 @@ class TerrenoController {
                 'estado'           => $_POST['estado']
             ];
 
-            $this->terrenoModel->crear($datos);
+            // Guardamos la propiedad y recibimos su ID
+            $propiedadId = $this->terrenoModel->crear($datos);
+
+            // 2. Subida de la Galería de Fotos Adicionales
+            if ($propiedadId && isset($_FILES['galeria'])) {
+                $totalArchivos = count($_FILES['galeria']['name']);
+                for ($i = 0; $i < $totalArchivos; $i++) {
+                    if ($_FILES['galeria']['error'][$i] === UPLOAD_ERR_OK) {
+                        $ext = strtolower(pathinfo($_FILES['galeria']['name'][$i], PATHINFO_EXTENSION));
+                        $nombreFoto = 'gal_' . $propiedadId . '_' . time() . '_' . $i . '.' . $ext;
+                        if (move_uploaded_file($_FILES['galeria']['tmp_name'][$i], $directorioImg . $nombreFoto)) {
+                            $this->terrenoModel->agregarImagenGaleria($propiedadId, $nombreFoto);
+                        }
+                    }
+                }
+            }
+
             header('Location: index.php?action=admin&ok=1');
             exit;
         }

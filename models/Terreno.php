@@ -9,25 +9,33 @@ class Terreno {
         $this->conn = $db;
     }
 
-    // Para el mapa público (oculta los vendidos)
+   public function obtenerGaleria($propiedad_id) {
+        $query = "SELECT nombre_archivo FROM propiedad_imagenes WHERE propiedad_id = :propiedad_id ORDER BY id ASC";
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute([':propiedad_id' => $propiedad_id]);
+        return $stmt->fetchAll(PDO::FETCH_COLUMN);
+    }
+
     public function obtenerTodas($zona = null) {
         $query = "SELECT * FROM " . $this->table . " WHERE estado != 'vendido'";
-        
         if ($zona && $zona !== 'todas') {
             $query .= " AND zona = :zona";
         }
-        
         $query .= " ORDER BY fecha_registro DESC";
         $stmt = $this->conn->prepare($query);
-
         if ($zona && $zona !== 'todas') {
             $stmt->bindParam(':zona', $zona);
         }
-
         $stmt->execute();
-        return $stmt->fetchAll();
-    }
+        $propiedades = $stmt->fetchAll();
 
+        // Adjuntar el array de fotos adicionales a cada propiedad
+        foreach ($propiedades as &$prop) {
+            $prop['galeria'] = $this->obtenerGaleria($prop['id']);
+        }
+
+        return $propiedades;
+    }
     // Para el panel de administración (muestra absolutamente todas, incluso vendidas)
     public function obtenerTodasAdmin() {
         $query = "SELECT * FROM " . $this->table . " ORDER BY fecha_registro DESC";
@@ -67,6 +75,7 @@ class Terreno {
             ':imagen_principal' => $datos['imagen_principal'],
             ':estado'           => $datos['estado']
         ]);
+        return $ejecutado ? $this->conn->lastInsertId() : false;
     }
 
     // Cambiar estado rápidamente (disponible / apartado / vendido)
@@ -81,6 +90,18 @@ class Terreno {
         $query = "DELETE FROM " . $this->table . " WHERE id = :id";
         $stmt = $this->conn->prepare($query);
         return $stmt->execute([':id' => $id]);
+    }
+
+
+
+    // Guardar imagen en la galería
+    public function agregarImagenGaleria($propiedad_id, $nombre_archivo) {
+        $query = "INSERT INTO propiedad_imagenes (propiedad_id, nombre_archivo) VALUES (:propiedad_id, :nombre_archivo)";
+        $stmt = $this->conn->prepare($query);
+        return $stmt->execute([
+            ':propiedad_id'   => $propiedad_id,
+            ':nombre_archivo' => $nombre_archivo
+        ]);
     }
 }
 ?>

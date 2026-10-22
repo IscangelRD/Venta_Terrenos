@@ -119,8 +119,13 @@
             </div>
 
             <div class="form-group">
-                <label>Fotografía Principal</label>
+                <label>Fotografía de Portada (Principal)</label>
                 <input type="file" name="imagen" accept="image/*">
+            </div>
+
+            <div class="form-group">
+                <label>📸 Galería de Fotos Adicionales (Puedes seleccionar varias)</label>
+                <input type="file" name="galeria[]" accept="image/*" multiple>
             </div>
 
             <div class="form-group">
@@ -134,6 +139,69 @@
 
     <!-- Inventario y Cambio Rápido de Estado -->
     <div class="card">
+
+
+    <!-- Cotizador Administrativo de Terrenos -->
+        <div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:12px; padding:16px; margin-bottom:24px;">
+            <h2 style="margin-bottom:12px; color:#0f172a;">🧮 Cotizador Administrativo de Financiamiento</h2>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Seleccionar Propiedad</label>
+                    <select id="cotPropiedad" onchange="cargarPrecioCotizador()">
+                        <?php 
+                        $hayCotizables = false;
+                        foreach ($propiedades as $p): 
+                            if ($p['estado'] === 'vendido') continue; // Se ocultan los vendidos
+                            $hayCotizables = true;
+                        ?>
+                            <option value="<?= $p['precio'] ?>" data-titulo="<?= htmlspecialchars($p['titulo']) ?>" data-sup="<?= $p['superficie_m2'] ?>" data-zona="<?= htmlspecialchars($p['zona']) ?>">
+                                <?= htmlspecialchars($p['titulo']) ?> (<?= strtoupper($p['estado']) ?>) - $<?= number_format($p['precio'], 0) ?>
+                            </option>
+                        <?php endforeach; ?>
+
+                        <?php if (!$hayCotizables): ?>
+                            <option value="0">No hay propiedades activas para cotizar</option>
+                        <?php endif; ?>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Precio Base (MXN)</label>
+                    <input type="number" id="cotPrecio" oninput="calcularCotizacionAdmin()" placeholder="Precio">
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Enganche Acordado ($)</label>
+                    <input type="number" id="cotEnganche" step="5000" oninput="calcularCotizacionAdmin()">
+                </div>
+                <div class="form-group">
+                    <label>Plazo (Meses)</label>
+                    <select id="cotMeses" onchange="calcularCotizacionAdmin()">
+                        <option value="0">Contado (1 exhibición)</option>
+                        <option value="6">6 Meses</option>
+                        <option value="12">12 Meses (1 año)</option>
+                        <option value="18">18 Meses</option>
+                        <option value="24" selected>24 Meses (2 años)</option>
+                        <option value="36">36 Meses (3 años)</option>
+                        <option value="48">48 Meses (4 años)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="resumenCotizacion" style="background:#dcfce7; color:#15803d; padding:12px; border-radius:8px; font-size:0.9rem; margin-bottom:12px; line-height:1.5;">
+                Selecciona una propiedad para calcular.
+            </div>
+
+            <div class="form-row">
+                <input type="tel" id="cotTelCliente" placeholder="WhatsApp del cliente (10 dígitos)">
+                <button type="button" onclick="enviarCotizacionCliente()" style="background:#25D366; color:#fff; border:none; border-radius:8px; font-weight:700; cursor:pointer; padding:10px;">
+                    📲 Enviar Cotización al Cliente
+                </button>
+            </div>
+        </div>
+
         <h2>📋 Inventario de Propiedades (<?= count($propiedades) ?>)</h2>
         <table>
             <thead>
@@ -174,6 +242,8 @@
         </table>
     </div>
 </div>
+
+
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
@@ -232,6 +302,79 @@
             }
         }
     });
+
+
+    // Lógica del Cotizador Administrativo
+    function cargarPrecioCotizador() {
+        const select = document.getElementById('cotPropiedad');
+        if (!select || select.options.length === 0) return;
+
+        const opt = select.options[select.selectedIndex];
+        const precio = parseFloat(select.value) || 0;
+
+        document.getElementById('cotPrecio').value = precio > 0 ? precio : '';
+        document.getElementById('cotEnganche').value = precio > 0 ? Math.round(precio * 0.20) : '';
+
+        if (precio === 0) {
+            document.getElementById('resumenCotizacion').innerHTML = 'No hay terrenos disponibles para cotizar.';
+            return;
+        }
+
+        calcularCotizacionAdmin();
+    }
+
+    function calcularCotizacionAdmin() {
+        const precio = parseFloat(document.getElementById('cotPrecio').value) || 0;
+        const enganche = parseFloat(document.getElementById('cotEnganche').value) || 0;
+        const meses = parseInt(document.getElementById('cotMeses').value) || 0;
+        const saldo = Math.max(0, precio - enganche);
+        const mensualidad = meses > 0 ? Math.round(saldo / meses) : 0;
+
+        const caja = document.getElementById('resumenCotizacion');
+        if (meses === 0) {
+            caja.innerHTML = `<strong>💰 Pago de Contado:</strong> $${precio.toLocaleString('es-MX')} MXN`;
+        } else {
+            caja.innerHTML = `
+                <strong>Precio Total:</strong> $${precio.toLocaleString('es-MX')} MXN | 
+                <strong>Enganche:</strong> $${enganche.toLocaleString('es-MX')} MXN<br>
+                <strong>Saldo a financiar:</strong> $${saldo.toLocaleString('es-MX')} MXN 
+                👉 <strong>${meses} mensualidades de $${mensualidad.toLocaleString('es-MX')} MXN</strong>
+            `;
+        }
+    }
+
+    function enviarCotizacionCliente() {
+        const select = document.getElementById('cotPropiedad');
+        const opt = select.options[select.selectedIndex];
+        const titulo = opt ? opt.dataset.titulo : 'Terreno';
+        const sup = opt ? opt.dataset.sup : '';
+        const zona = opt ? opt.dataset.zona : '';
+
+        const precio = parseFloat(document.getElementById('cotPrecio').value) || 0;
+        const enganche = parseFloat(document.getElementById('cotEnganche').value) || 0;
+        const meses = parseInt(document.getElementById('cotMeses').value) || 0;
+        const saldo = Math.max(0, precio - enganche);
+        const mensualidad = meses > 0 ? Math.round(saldo / meses) : 0;
+
+        const tel = document.getElementById('cotTelCliente').value.replace(/[^0-9]/g, '');
+
+        let textoPlan = meses === 0 
+            ? `• *Pago de Contado:* $${precio.toLocaleString('es-MX')} MXN`
+            : `• *Precio Total:* $${precio.toLocaleString('es-MX')} MXN\n• *Enganche:* $${enganche.toLocaleString('es-MX')} MXN\n• *Financiamiento:* ${meses} mensualidades de *$${mensualidad.toLocaleString('es-MX')} MXN*`;
+
+        const msg = encodeURIComponent(
+            `📄 *COTIZACIÓN DE PROPIEDAD*\n\n` +
+            `📍 *${titulo}* (${zona} - ${sup} m²)\n` +
+            `${textoPlan}\n\n` +
+            `Quedo a tus órdenes para cualquier duda o para agendar tu visita al terreno.`
+        );
+
+        const url = tel.length >= 10 ? `https://wa.me/521${tel}?text=${msg}` : `https://wa.me/?text=${msg}`;
+        window.open(url, '_blank');
+    }
+
+    // Inicializar al abrir el panel
+    cargarPrecioCotizador();
 </script>
 </body>
 </html>
