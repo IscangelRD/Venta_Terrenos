@@ -37,7 +37,12 @@
 
 <div class="top-links">
     <h1>⚙️ Administración de Terrenos</h1>
-    <a href="index.php" class="btn-ver" target="_blank">🗺️ Ver Mapa Público</a>
+    <div style="display:flex; gap:10px; align-items:center;">
+        <span style="font-size:0.9rem; color:#475569;">Hola, <strong><?= htmlspecialchars($_SESSION['usuario_nombre'] ?? 'Admin') ?></strong></span>
+        <a href="index.php" class="btn-ver" target="_blank">🗺️ Ver Mapa Público</a>
+        <a href="index.php?action=logout" class="btn-ver" style="background:#dc2626;">🚪 Salir</a>
+    </div>
+</div>
 </div>
 
 <div class="container">
@@ -298,7 +303,12 @@
             if (figuraPoligono) {
                 figuraPoligono.setLatLngs(puntosPoligono);
             } else {
-                figuraPoligono = L.polygon(puntosPoligono, { color: '#22c55e', weight: 3, fillOpacity: 0.35 }).addTo(adminMap);
+                figuraPoligono = L.polygon(puntosPoligono, { 
+                    color: '#facc15',        // Amarillo neón para trazar con total claridad
+                    weight: 3.5, 
+                    fillColor: '#22c55e', 
+                    fillOpacity: 0.4 
+                }).addTo(adminMap);
             }
         }
     });

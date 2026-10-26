@@ -73,21 +73,38 @@ function renderizarPropiedades(lista) {
         });
         markers[prop.id] = marker;
 
-        // Dibujar polígono si lo tiene
+        // Si el terreno tiene polígono trazado, lo dibujamos con estilo de alto contraste
         if (prop.poligono) {
             try {
-                const coords = JSON.parse(prop.poligono);
-                if (Array.isArray(coords) && coords.length >= 3) {
-                    const colorPoli = prop.estado === 'apartado' ? '#eab308' : '#22c55e';
-                    const poly = L.polygon(coords, {
-                        color: colorPoli,
-                        weight: 2,
-                        fillColor: colorPoli,
-                        fillOpacity: 0.3
+                const coordsPoli = JSON.parse(prop.poligono);
+                if (Array.isArray(coordsPoli) && coordsPoli.length >= 3) {
+                    const esApartado = prop.estado === 'apartado';
+
+                    // Colores de alta visibilidad para fotografía aérea satelital
+                    const colorBorde = esApartado ? '#f97316' : '#facc15'; // Naranja si apartado, Amarillo neón si disponible
+                    const colorRelleno = esApartado ? '#ea580c' : '#22c55e';
+
+                    const poly = L.polygon(coordsPoli, {
+                        className: 'predio-poligono',
+                        color: colorBorde,        // Borde nítido
+                        weight: 3.5,              // Línea más gruesa y visible
+                        opacity: 1,
+                        fillColor: colorRelleno,
+                        fillOpacity: 0.38         // Opacidad balanceada para ver árboles y accesos de fondo
                     }).addTo(map);
+
+                    // Clic en el propio dibujo del predio abre la ficha
+                    poly.on('click', (e) => {
+                        L.DomEvent.stopPropagation(e);
+                        centrarPropiedad(prop.id);
+                        abrirDetalle(prop);
+                    });
+
                     polygons[prop.id] = poly;
                 }
-            } catch (err) {}
+            } catch (err) {
+                console.error("Error al trazar polígono:", err);
+            }
         }
 
         // Tarjeta del carrusel
@@ -121,17 +138,39 @@ function centrarPropiedad(id) {
     const prop = propiedades.find(p => parseInt(p.id) === parseInt(id));
     if (!prop) return;
 
-    map.flyTo([parseFloat(prop.latitud), parseFloat(prop.longitud)], 16, { duration: 0.8 });
+    // Si tiene polígono, ajustamos el encuadre exacto al terreno; si no, volamos a su pin
+    if (polygons[id]) {
+        map.flyToBounds(polygons[id].getBounds(), {
+            padding: [70, 70],
+            maxZoom: 17,
+            duration: 0.8
+        });
+    } else {
+        map.flyTo([parseFloat(prop.latitud), parseFloat(prop.longitud)], 16, { duration: 0.8 });
+    }
 
+    // Resetear estilos de todos los pines y polígonos
     document.querySelectorAll('.price-pin').forEach(el => el.classList.remove('active-pin'));
     document.querySelectorAll('.property-card').forEach(el => el.classList.remove('active'));
 
+    Object.values(polygons).forEach(poly => {
+        const path = poly.getElement();
+        if (path) path.classList.remove('predio-activo');
+    });
+
+    // Activar pin actual
     const pinEl = document.getElementById(`pin-${prop.id}`);
     const cardEl = document.getElementById(`card-${prop.id}`);
     if (pinEl) pinEl.classList.add('active-pin');
     if (cardEl) {
         cardEl.classList.add('active');
         cardEl.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    }
+
+    // Resaltar con animación el polígono activo
+    if (polygons[id]) {
+        const polyPath = polygons[id].getElement();
+        if (polyPath) polyPath.classList.add('predio-activo');
     }
 }
 
@@ -221,15 +260,12 @@ function abrirDetalle(prop) {
             <strong>⚡ Servicios:</strong> ${prop.servicios}<br>
             <strong>📍 Ubicación:</strong> ${prop.zona}
         </div>
-
-        <div style="border-top:1px solid #e2e8f0; padding-top:12px; margin-top:12px;">
-            <div style="font-size:0.82rem; font-weight:600; color:#334155; margin-bottom:8px;">📲 Déjanos tus datos para enviarte ubicación exacta y planes de pago:</div>
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px;">
-            </div>
-            <button onclick="enviarLeadWhatsApp(${prop.id}, '${prop.titulo.replace(/'/g, "\\'")}', '${prop.zona.replace(/'/g, "\\'")}', ${precioTotal})" 
-                    class="btn-whatsapp" style="border:none; cursor:pointer; margin-top:4px;">
+<div style="border-top: 1px solid #e2e8f0; padding-top: 14px; margin-top: 14px;">
+            <button onclick="enviarMensajeWhatsApp('${prop.titulo.replace(/'/g, "\\'")}', '${prop.zona.replace(/'/g, "\\'")}', ${precioTotal})" 
+                    class="btn-whatsapp" style="border:none; cursor:pointer;">
                 💬 Pedir Información o Agendar Visita
             </button>
+        </div>
         </div>
     `;
     sheet.classList.add('open');
@@ -247,30 +283,15 @@ function filtrarZona(zona, btn) {
     cargarPropiedades(zona);
 }
 
-async function enviarLeadWhatsApp(idProp, titulo, zona, precioTotal) {
-    const nombre = document.getElementById('leadNombre').value.trim() || 'Interesado';
-    const telefono = document.getElementById('leadTelefono').value.trim() || 'Sin especificar';
-
-    try {
-        await fetch('index.php?action=lead', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                propiedad_id: idProp,
-                nombre: nombre,
-                telefono: telefono,
-                plan_interes: 'Solicitó informes / planes de pago'
-            })
-        });
-    } catch (e) {
-        console.error(e);
-    }
-
+function enviarMensajeWhatsApp(titulo, zona, precioTotal) {
+    const precioTxt = Number(precioTotal).toLocaleString('es-MX');
     const mensaje = encodeURIComponent(
-        `Hola, soy *${nombre}*. Vi en el catálogo el terreno *${titulo}* en *${zona}* ($${precioTotal.toLocaleString('es-MX')} MXN) y me gustaría conocer los planes de pago o agendar una visita.`
+        `Hola, me interesa recibir informes y agendar una visita para el lote *${titulo}* en *${zona}* ($${precioTxt} MXN).`
     );
     window.open(`https://wa.me/${TELEFONO_WHATSAPP}?text=${mensaje}`, '_blank');
 }
+
+
 
 // Cerrar detalle al hacer clic en área libre del mapa
 map.on('click', cerrarDetalle);

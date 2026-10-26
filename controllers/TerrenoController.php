@@ -2,6 +2,7 @@
 // controllers/TerrenoController.php
 
 require_once __DIR__ . '/../config/db.php';
+require_once __DIR__ . '/../models/Usuario.php';
 require_once __DIR__ . '/../models/Terreno.php';
 
 class TerrenoController {
@@ -109,6 +110,60 @@ class TerrenoController {
             $this->terrenoModel->eliminar(intval($_GET['id']));
         }
         header('Location: index.php?action=admin');
+        exit;
+    }
+
+    private function verificarAutenticacion() {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+        if (!isset($_SESSION['usuario_admin'])) {
+            header('Location: index.php?action=login');
+            exit;
+        }
+    }
+
+
+    public function login() {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+        if (isset($_SESSION['usuario_admin'])) {
+            header('Location: index.php?action=admin');
+            exit;
+        }
+        require_once __DIR__ . '/../views/login.php';
+    }
+
+    public function doLogin() {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $usuario = trim($_POST['usuario'] ?? '');
+            $password = trim($_POST['password'] ?? '');
+
+            $usuarioModel = new Usuario($this->db);
+            $user = $usuarioModel->login($usuario, $password);
+
+            if ($user) {
+                $_SESSION['usuario_admin'] = $user['usuario'];
+                $_SESSION['usuario_nombre'] = $user['nombre'];
+                header('Location: index.php?action=admin');
+                exit;
+            }
+        }
+        header('Location: index.php?action=login&error=1');
+        exit;
+    }
+
+    public function logout() {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+        $_SESSION = [];
+        session_destroy();
+        header('Location: index.php?action=login');
         exit;
     }
 }

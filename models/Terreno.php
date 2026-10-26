@@ -59,7 +59,7 @@ class Terreno {
 
         $stmt = $this->conn->prepare($query);
 
-        return $stmt->execute([
+        $resultado = $stmt->execute([
             ':titulo'           => $datos['titulo'],
             ':tipo'             => $datos['tipo'],
             ':precio'           => $datos['precio'],
@@ -75,7 +75,9 @@ class Terreno {
             ':imagen_principal' => $datos['imagen_principal'],
             ':estado'           => $datos['estado']
         ]);
-        return $ejecutado ? $this->conn->lastInsertId() : false;
+
+        // Retorna el ID generado por MySQL para este terreno específico
+        return $resultado ? (int)$this->conn->lastInsertId() : false;
     }
 
     // Cambiar estado rápidamente (disponible / apartado / vendido)

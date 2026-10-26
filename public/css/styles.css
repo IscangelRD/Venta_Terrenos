@@ -203,3 +203,38 @@ body, html {
     margin-top: 16px;
     box-shadow: 0 4px 12px rgba(37, 211, 102, 0.3);
 }
+
+/* Realce de linderos sobre vista satélite */
+.leaflet-interactive.predio-poligono {
+    filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.75));
+    transition: all 0.25s ease;
+}
+
+/* Polígono activo/seleccionado */
+.leaflet-interactive.predio-activo {
+    stroke-dasharray: 6, 8;
+    animation: animarLinderos 1.2s linear infinite;
+    filter: drop-shadow(0 0 10px rgba(250, 204, 21, 0.9));
+}
+
+@keyframes animarLinderos {
+    to {
+        stroke-dashoffset: -28;
+    }
+}
+
+/* Etiqueta de metraje sobre el predio */
+.etiqueta-lote {
+    background: rgba(15, 23, 42, 0.85);
+    color: #f8fafc;
+    border: 1px solid #facc15;
+    font-weight: 700;
+    font-size: 0.72rem;
+    padding: 2px 7px;
+    border-radius: 6px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+    white-space: nowrap;
+}
+.leaflet-tooltip-left:before, .leaflet-tooltip-right:before {
+    display: none; /* Quita la flechita del tooltip para dejarlo como pastilla limpia */
+}

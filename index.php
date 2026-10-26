@@ -12,6 +12,15 @@ switch ($action) {
     case 'api':
         $controller->apiListar();
         break;
+        case 'login':
+        $controller->login();
+        break;
+    case 'do_login':
+        $controller->doLogin();
+        break;
+    case 'logout':
+        $controller->logout();
+        break;
     case 'home':
     default:
         $controller->index();
