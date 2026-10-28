@@ -1,12 +1,45 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+    <!DOCTYPE html>
+<html lang="es">
+<head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Catálogo de Terrenos y Propiedades</title>
+    
+    <?php
+        // Detectar dominio y protocolo automáticamente
+        $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? "https://" : "http://";
+        $baseUrl = $protocol . $_SERVER['HTTP_HOST'] . strtok($_SERVER["REQUEST_URI"], '?');
+
+        if (!empty($loteCompartido)) {
+            $ogTitulo = htmlspecialchars($loteCompartido['titulo']) . " en " . htmlspecialchars($loteCompartido['zona']) . " - $" . number_format($loteCompartido['precio'], 0) . " MXN";
+            $ogDesc = "Superficie: " . $loteCompartido['superficie_m2'] . " m² | Estatus: " . $loteCompartido['estatus_legal'] . " | Servicios: " . $loteCompartido['servicios'] . ". Toca para ver ubicación satelital y linderos exactos.";
+            $foto = (!empty($loteCompartido['imagen_principal']) && $loteCompartido['imagen_principal'] !== 'default.jpg') 
+                    ? $loteCompartido['imagen_principal'] 
+                    : 'default.jpg';
+            $ogImg = $protocol . $_SERVER['HTTP_HOST'] . dirname($_SERVER['PHP_SELF']) . "/public/img/" . $foto;
+            $ogUrl = $baseUrl . "?lote=" . $loteCompartido['id'];
+        } else {
+            $ogTitulo = "Catálogo de Terrenos y Lotes | Ubicación Satelital";
+            $ogDesc = "Explora lotes disponibles con vista satelital interactiva, linderos exactos y trato directo por WhatsApp.";
+            $ogImg = $protocol . $_SERVER['HTTP_HOST'] . dirname($_SERVER['PHP_SELF']) . "/public/img/default.jpg";
+            $ogUrl = $baseUrl;
+        }
+    ?>
+
+    <title><?= $ogTitulo ?></title>
+
+    <!-- Metaetiquetas Open Graph para Facebook, WhatsApp y Redes -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="<?= $ogTitulo ?>" />
+    <meta property="og:description" content="<?= $ogDesc ?>" />
+    <meta property="og:image" content="<?= $ogImg ?>" />
+    <meta property="og:url" content="<?= $ogUrl ?>" />
+    <meta name="twitter:card" content="summary_large_image">
+
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <!-- Estilos Propios -->
     <link rel="stylesheet" href="public/css/styles.css">
 </head>
 <body>
@@ -32,6 +65,11 @@
         <div class="sheet-handle" onclick="cerrarDetalle()"></div>
         <div id="sheetContent"></div>
     </div>
+
+            <!-- Pasar a JS el lote compartido si existe -->
+    <script>
+        const LOTE_INICIAL = <?= !empty($loteCompartido) ? json_encode($loteCompartido['id']) : 'null' ?>;
+    </script>
 
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>

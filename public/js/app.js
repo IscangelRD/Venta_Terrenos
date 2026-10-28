@@ -80,20 +80,18 @@ function renderizarPropiedades(lista) {
                 if (Array.isArray(coordsPoli) && coordsPoli.length >= 3) {
                     const esApartado = prop.estado === 'apartado';
 
-                    // Colores de alta visibilidad para fotografía aérea satelital
-                    const colorBorde = esApartado ? '#f97316' : '#facc15'; // Naranja si apartado, Amarillo neón si disponible
+                    const colorBorde = esApartado ? '#f97316' : '#facc15';
                     const colorRelleno = esApartado ? '#ea580c' : '#22c55e';
 
                     const poly = L.polygon(coordsPoli, {
                         className: 'predio-poligono',
-                        color: colorBorde,        // Borde nítido
-                        weight: 3.5,              // Línea más gruesa y visible
+                        color: colorBorde,
+                        weight: 3.5,
                         opacity: 1,
                         fillColor: colorRelleno,
-                        fillOpacity: 0.38         // Opacidad balanceada para ver árboles y accesos de fondo
+                        fillOpacity: 0.38
                     }).addTo(map);
 
-                    // Clic en el propio dibujo del predio abre la ficha
                     poly.on('click', (e) => {
                         L.DomEvent.stopPropagation(e);
                         centrarPropiedad(prop.id);
@@ -131,14 +129,23 @@ function renderizarPropiedades(lista) {
         carousel.appendChild(card);
     });
 
-    centrarPropiedad(lista[0].id);
+    if (typeof LOTE_INICIAL !== 'undefined' && LOTE_INICIAL) {
+        const propInicial = lista.find(p => parseInt(p.id) === parseInt(LOTE_INICIAL));
+        if (propInicial) {
+            centrarPropiedad(propInicial.id);
+            abrirDetalle(propInicial);
+        } else {
+            centrarPropiedad(lista[0].id);
+        }
+    } else if (lista.length > 0) {
+        centrarPropiedad(lista[0].id);
+    }
 }
 
 function centrarPropiedad(id) {
     const prop = propiedades.find(p => parseInt(p.id) === parseInt(id));
     if (!prop) return;
 
-    // Si tiene polígono, ajustamos el encuadre exacto al terreno; si no, volamos a su pin
     if (polygons[id]) {
         map.flyToBounds(polygons[id].getBounds(), {
             padding: [70, 70],
@@ -149,7 +156,6 @@ function centrarPropiedad(id) {
         map.flyTo([parseFloat(prop.latitud), parseFloat(prop.longitud)], 16, { duration: 0.8 });
     }
 
-    // Resetear estilos de todos los pines y polígonos
     document.querySelectorAll('.price-pin').forEach(el => el.classList.remove('active-pin'));
     document.querySelectorAll('.property-card').forEach(el => el.classList.remove('active'));
 
@@ -158,7 +164,6 @@ function centrarPropiedad(id) {
         if (path) path.classList.remove('predio-activo');
     });
 
-    // Activar pin actual
     const pinEl = document.getElementById(`pin-${prop.id}`);
     const cardEl = document.getElementById(`card-${prop.id}`);
     if (pinEl) pinEl.classList.add('active-pin');
@@ -167,7 +172,6 @@ function centrarPropiedad(id) {
         cardEl.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
     }
 
-    // Resaltar con animación el polígono activo
     if (polygons[id]) {
         const polyPath = polygons[id].getElement();
         if (polyPath) polyPath.classList.add('predio-activo');
@@ -237,6 +241,7 @@ function abrirDetalle(prop) {
     }
 
     const urlGoogleMaps = `https://www.google.com/maps/search/?api=1&query=${prop.latitud},${prop.longitud}`;
+    const urlCompartir = `${window.location.origin}${window.location.pathname}?lote=${prop.id}`;
 
     content.innerHTML = `
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
@@ -253,6 +258,11 @@ function abrirDetalle(prop) {
             <a href="${urlGoogleMaps}" target="_blank" style="font-size:0.82rem; color:#2563eb; text-decoration:none; font-weight:600;">📍 Cómo llegar (GPS)</a>
         </div>
 
+        <button onclick="copiarEnlaceLote('${urlCompartir}')" 
+                style="width:100%; background:#f1f5f9; border:1px solid #cbd5e1; padding:8px 12px; border-radius:8px; font-size:0.82rem; font-weight:600; cursor:pointer; color:#334155; margin-bottom:12px;">
+            🔗 Copiar enlace para compartir
+        </button>
+
         <p style="color:#334155; line-height:1.5; font-size:0.92rem;">${prop.descripcion}</p>
 
         <div class="trust-box">
@@ -260,15 +270,27 @@ function abrirDetalle(prop) {
             <strong>⚡ Servicios:</strong> ${prop.servicios}<br>
             <strong>📍 Ubicación:</strong> ${prop.zona}
         </div>
-<div style="border-top: 1px solid #e2e8f0; padding-top: 14px; margin-top: 14px;">
+
+        <div style="border-top: 1px solid #e2e8f0; padding-top: 14px; margin-top: 14px;">
             <button onclick="enviarMensajeWhatsApp('${prop.titulo.replace(/'/g, "\\'")}', '${prop.zona.replace(/'/g, "\\'")}', ${precioTotal})" 
                     class="btn-whatsapp" style="border:none; cursor:pointer;">
                 💬 Pedir Información o Agendar Visita
             </button>
         </div>
-        </div>
     `;
     sheet.classList.add('open');
+}
+
+function copiarEnlaceLote(url) {
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(url).then(() => {
+            alert('¡Enlace copiado! Ya puedes pegarlo en Facebook o WhatsApp.');
+        }).catch(() => {
+            prompt('Copia este enlace para compartir:', url);
+        });
+    } else {
+        prompt('Copia este enlace para compartir:', url);
+    }
 }
 
 function cerrarDetalle() {
@@ -290,8 +312,6 @@ function enviarMensajeWhatsApp(titulo, zona, precioTotal) {
     );
     window.open(`https://wa.me/${TELEFONO_WHATSAPP}?text=${mensaje}`, '_blank');
 }
-
-
 
 // Cerrar detalle al hacer clic en área libre del mapa
 map.on('click', cerrarDetalle);

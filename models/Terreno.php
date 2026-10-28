@@ -105,5 +105,17 @@ class Terreno {
             ':nombre_archivo' => $nombre_archivo
         ]);
     }
+
+    // Obtener un predio específico por su ID (para compartir en redes)
+    public function obtenerPorId($id) {
+        $query = "SELECT * FROM " . $this->table . " WHERE id = :id LIMIT 1";
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute([':id' => intval($id)]);
+        $prop = $stmt->fetch();
+        if ($prop) {
+            $prop['galeria'] = $this->obtenerGaleria($prop['id']);
+        }
+        return $prop;
+    }
 }
 ?>

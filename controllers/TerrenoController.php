@@ -17,6 +17,13 @@ class TerrenoController {
 
     public function index() {
         $zonas = $this->terrenoModel->obtenerZonas();
+
+        //Detectar si se está abriendo un terreno específico desde Facebook/WhatsApp
+        $loteId = isset($_GET['lote']) ? intval($_GET['lote']) : null;
+        $loteCompartido = null;
+        if ($loteId) {
+            $loteCompartido = $this->terrenoModel->obtenerPorId($loteId);
+        }
         require_once __DIR__ . '/../views/home.php';
     }
 
