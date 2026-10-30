@@ -221,14 +221,19 @@ function abrirDetalle(prop) {
         todasLasFotos = todasLasFotos.concat(prop.galeria);
     }
 
-    let sliderHtml = '';
+   let sliderHtml = '';
+    window.fotosActualesLightbox = todasLasFotos; // Guardamos las fotos del lote actual
+
     if (todasLasFotos.length > 0) {
         sliderHtml = `
             <div style="display:flex; gap:8px; overflow-x:auto; scroll-snap-type:x mandatory; margin-bottom:12px; border-radius:14px; scrollbar-width:none;">
                 ${todasLasFotos.map((foto, idx) => `
-                    <div style="flex:0 0 100%; scroll-snap-align:center; position:relative;">
+                    <div style="flex:0 0 100%; scroll-snap-align:center; position:relative; cursor:zoom-in;" onclick="abrirLightbox(${idx})">
                         <img src="public/img/${foto}" onerror="this.parentElement.style.display='none'" 
                              style="width:100%; height:200px; object-fit:cover; border-radius:14px; display:block;">
+                        <span style="position:absolute; bottom:8px; left:8px; background:rgba(15,23,42,0.75); color:#fff; font-size:0.72rem; padding:3px 8px; border-radius:12px;">
+                            🔍 Toca para ampliar
+                        </span>
                         ${todasLasFotos.length > 1 ? `
                             <span style="position:absolute; bottom:8px; right:8px; background:rgba(15,23,42,0.75); color:#fff; font-size:0.75rem; padding:3px 8px; border-radius:12px; font-weight:600;">
                                 📷 ${idx + 1}/${todasLasFotos.length}
@@ -311,6 +316,48 @@ function enviarMensajeWhatsApp(titulo, zona, precioTotal) {
         `Hola, me interesa recibir informes y agendar una visita para el lote *${titulo}* en *${zona}* ($${precioTxt} MXN).`
     );
     window.open(`https://wa.me/${TELEFONO_WHATSAPP}?text=${mensaje}`, '_blank');
+}
+
+let indiceLightbox = 0;
+
+function abrirLightbox(index) {
+    if (!window.fotosActualesLightbox || window.fotosActualesLightbox.length === 0) return;
+    indiceLightbox = index;
+    actualizarVistaLightbox();
+    document.getElementById('lightboxModal').classList.add('active');
+}
+
+function actualizarVistaLightbox() {
+    const fotos = window.fotosActualesLightbox;
+    const img = document.getElementById('lightboxImg');
+    const counter = document.getElementById('lightboxCounter');
+    
+    img.classList.remove('zoomed');
+    img.src = `public/img/${fotos[indiceLightbox]}`;
+    counter.textContent = `📷 ${indiceLightbox + 1} / ${fotos.length}`;
+}
+
+function cambiarFotoLightbox(direccion, e) {
+    if (e) e.stopPropagation();
+    const fotos = window.fotosActualesLightbox;
+    if (!fotos || fotos.length <= 1) return;
+    indiceLightbox = (indiceLightbox + direccion + fotos.length) % fotos.length;
+    actualizarVistaLightbox();
+}
+
+function alternarZoom(e) {
+    if (e) e.stopPropagation();
+    const img = document.getElementById('lightboxImg');
+    img.classList.toggle('zoomed');
+}
+
+function cerrarLightbox(e, forzar = false) {
+    if (forzar || e.target.id === 'lightboxModal' || e.target.id === 'lightboxWrapper') {
+        const modal = document.getElementById('lightboxModal');
+        const img = document.getElementById('lightboxImg');
+        img.classList.remove('zoomed');
+        modal.classList.remove('active');
+    }
 }
 
 // Cerrar detalle al hacer clic en área libre del mapa

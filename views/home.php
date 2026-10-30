@@ -65,6 +65,21 @@
         <div class="sheet-handle" onclick="cerrarDetalle()"></div>
         <div id="sheetContent"></div>
     </div>
+    <!-- Visor de Imágenes a Pantalla Completa (Lightbox con Zoom) -->
+    <div id="lightboxModal" class="lightbox-modal" onclick="cerrarLightbox(event)">
+        <div class="lightbox-toolbar">
+            <span id="lightboxCounter" class="lightbox-counter">1 / 1</span>
+            <div style="display:flex; gap:10px;">
+                <button type="button" class="lightbox-btn" onclick="alternarZoom(event)">🔍 Zoom</button>
+                <button type="button" class="lightbox-btn" onclick="cerrarLightbox(event, true)">✕</button>
+            </div>
+        </div>
+        <button type="button" class="lightbox-nav prev" onclick="cambiarFotoLightbox(-1, event)">‹</button>
+        <div class="lightbox-img-wrapper" id="lightboxWrapper">
+            <img id="lightboxImg" src="" alt="Vista ampliada" onclick="alternarZoom(event)">
+        </div>
+        <button type="button" class="lightbox-nav next" onclick="cambiarFotoLightbox(1, event)">›</button>
+    </div>
 
             <!-- Pasar a JS el lote compartido si existe -->
     <script>

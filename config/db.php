@@ -6,6 +6,9 @@ class Database {
     private $db_name = "db_terrenos";
     private $username = "root";
     private $password = ""; // En XAMPP por defecto va vacío
+    //private $db_name = "u176240576_terrenos";
+    //private $username = "u176240576_AARD_Terrenos";
+    //private $password = "Angelalonso21"; // En XAMPP por defecto va vacío
     public $conn;
 
     public function getConnection() {
